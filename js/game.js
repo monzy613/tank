@@ -7,15 +7,19 @@ var imageNames = {
 	my_tank_down: "Assets/image/myTank_down.png",
 	my_tank_left: "Assets/image/myTank_l.png",
 	my_tank_right: "Assets/image/myTank_r.png",
-    bullet_up: "Assets/image/bullet.png",
-    bullet_down: "Assets/image/bullet_d.png",
-    bullet_left: "Assets/image/bullet_l.png",
-    bullet_right: "Assets/image/bullet_r.png",
-    red_wall: "Assets/image/redWall.png",
+	bullet_bomb: "Assets/image/bullet_bomb.png",
+	bullet_up: "Assets/image/bullet.png",
+	bullet_down: "Assets/image/bullet_d.png",
+	bullet_left: "Assets/image/bullet_l.png",
+	bullet_right: "Assets/image/bullet_r.png",
+	red_wall: "Assets/image/redWall.png",
+	steelWall: "Assets/image/steelWall.png",
+	lake: "Assets/image/lake.png",
 	eagle: "Assets/image/eagle.png",
 	white_flag: "Assets/image/white_flag.png",
 	light_enemy: "Assets/image/light_tank.png",
-	gameOver: "Assets/image/gameover.png"
+	gameOver: "Assets/image/gameover.png",
+	success: "Assets/image/success.png",
 }
 
 
@@ -35,6 +39,7 @@ var moveSpeed = 1.5
 var my_tank
 var eagle
 var gameOverLabel = undefined
+var successLabel = undefined
 
 var score = 0
 //if score === 20 success
@@ -48,10 +53,12 @@ var timeIntervalIDs = []
 
 
 var redWallGroup
+var steelWallGroup
 var worldWallGroup
 var enemyGroup
 var enemyBulletGroup
 var bulletGroup
+var lakeGroup
 
 var isGameOver = false
 
@@ -72,13 +79,13 @@ var my_map = [
 	[0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0],
 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],	
+	[2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2],
 	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 	[0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0],
 	[0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0],
 	[0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0],
-	[0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0],
-	[0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0],
+	[0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 3, 3, 3, 3, 3, 3, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0],
+	[0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 3, 3, 3, 3, 3, 3, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0],
 	[0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0],
 	[0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0],
 	[0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0],
@@ -100,6 +107,7 @@ function restart() {
 	allSprites.removeSprites()
 	isGameOver = false
 	clearAllIntervals()
+	score = 0
 	preload()
 }
 
@@ -118,6 +126,9 @@ function preload() {
 	enemyGroup = new Group()
 	enemyBulletGroup = new Group()
 	bulletGroup = new Group()
+	steelWallGroup = new Group()
+	lakeGroup = new Group()
+	
 	drawMap()
   	enemyGeneratorIntervalID = setInterval(enemyGenerator, 2000)
 	timeIntervalIDs.push(enemyGeneratorIntervalID)
@@ -133,6 +144,14 @@ function draw() {
 	if (isGameOver === true && gameOverLabel !== undefined) {
 		if (gameOverLabel.mouseIsPressed) {
 			gameOverLabel.remove()
+			gameOverLabel = undefined
+			restart()
+		}
+	}
+	if (isGameOver === true && successLabel !== undefined) {
+		if (successLabel.mouseIsPressed) {
+			successLabel.remove()
+			successLabel = undefined
 			restart()
 		}
 	}
@@ -152,12 +171,26 @@ function showScore() {
 function drawMap() {
 	for (var i = 0; i < my_map.length; ++i) {
 		for (var j = 0; j < my_map[i].length; ++j) {
-			if (my_map[j][i] === 1) {
-				//redwall
-				var tmp = createSprite((i + 0.5) * UNIT_WIDTH, (j + 0.5) * UNIT_WIDTH, UNIT_WIDTH, UNIT_WIDTH)
-				tmp.addImage(loadImage(imageNames.red_wall))
-				redWallGroup.add(tmp)
+			if (my_map[j][i] === 0) {
+				continue
 			}
+			var tmp = createSprite((i + 0.5) * UNIT_WIDTH, (j + 0.5) * UNIT_WIDTH, UNIT_WIDTH, UNIT_WIDTH)
+			switch(my_map[j][i]) {
+				case 1://redwall
+				tmp.addImage(loadImage(imageNames.red_wall))
+				redWallGroup.add(tmp)				
+				break
+				case 2://steelwall
+				tmp.addImage(loadImage(imageNames.steelWall))
+				steelWallGroup.add(tmp)				
+				break
+				case 3://lake
+				tmp.addImage(loadImage(imageNames.lake))
+				lakeGroup.add(tmp)
+				break
+			}
+			
+			
 		}
 	}
 	initWorldWalls()
@@ -217,11 +250,37 @@ function shot(sprite) {
 }
 
 function gameOver() {
-	isGameOver = true
-	clearInterval(enemyGeneratorIntervalID)
+	clearSprites()
 	gameOverLabel = createSprite(13 * UNIT_WIDTH, 13 * UNIT_WIDTH, UNIT_WIDTH * 2 / 3, UNIT_WIDTH * 2 / 3)
 	gameOverLabel.addImage(loadImage(imageNames.gameOver))
 	gameOverLabel.mouseActive = true
+
+}
+
+function success() {
+	clearSprites()
+	successLabel = createSprite(13 * UNIT_WIDTH, 13 * UNIT_WIDTH, UNIT_WIDTH * 2 / 3, UNIT_WIDTH * 2 / 3)
+	successLabel.addImage(loadImage(imageNames.success))
+	successLabel.mouseActive = true	
+}
+
+function clearSprites() {
+	isGameOver = true
+	clearAllIntervals()
+	parkAll()
+	deleteAllBullets()	
+}
+
+function deleteAllBullets() {
+	bulletGroup.removeSprites()
+	enemyBulletGroup.removeSprites()
+}
+
+function parkAll() {
+	park(my_tank)
+	for (var i = 0; i < enemyGroup.length; ++i) {
+		park(enemyGroup[i])
+	}
 }
 
 function detectCollide() {
@@ -232,6 +291,7 @@ function detectCollide() {
 	for (var j = 0; j < bulletGroup.length; ++j) {
 		if (
 		bulletGroup[j].collide(redWallGroup, function(bullet, wall) {
+			bomb(bullet)
 			bullet.remove()
 			wall.remove()
 		})
@@ -242,23 +302,27 @@ function detectCollide() {
 		||
 		bulletGroup[j].collide(eagle, function(bullet, flag) {
 			//gameOver
+			bomb(bullet)
 			eagle.addImage(loadImage(imageNames.white_flag))
 			gameOver()
 			bullet.remove()
 		})
 		||
 		bulletGroup[j].collide(enemyGroup, function(bullet, enemy) {
+			bomb(bullet)
 			bullet.remove()
-			enemy.remove()
-			clearInterval(enemy.enemyMoverIntervalID)
-			clearInterval(enemy.moveEnemyIntervalID)
-			clearInterval(enemy.shotID)
+			enemyDie(enemy)
 			scoreUp()
 		})
 		||
 		bulletGroup[j].collide(enemyBulletGroup, function(bullet1, bullet2) {
 			bullet1.remove()
 			bullet2.remove()
+		})
+		||
+		bulletGroup[j].collide(steelWallGroup, function(bullet, steelWall) {
+			bomb(bullet)
+			bullet.remove()
 		})
 		||
 		isOutOfRange(bulletGroup[j])
@@ -271,6 +335,7 @@ function detectCollide() {
 	for (var k = 0; k < enemyBulletGroup.length; ++k) {
 		if (
 			enemyBulletGroup[k].collide(redWallGroup, function(sp1, sp2) {
+				bomb(sp1)
 				sp1.remove()
 				sp2.remove()	
 			})
@@ -280,27 +345,43 @@ function detectCollide() {
 			})
 			||
 			enemyBulletGroup[k].collide(my_tank, function(sp1, sp2) {
+				bomb(sp1)
 				sp1.remove()
 				gameOver()
 			})
 			||
 			enemyBulletGroup[k].collide(eagle, function(sp1, sp2) {
+				bomb(sp1)
 				eagle.addImage(loadImage(imageNames.white_flag))
 				sp1.remove()
 				gameOver()
 			})
 			||
+			enemyBulletGroup[k].collide(steelWallGroup, function(bullet, steelWall) {
+				bomb(bullet)
+				bullet.remove()
+			})
+			||			
 			isOutOfRange(enemyBulletGroup[k])
 		) {
+			//dosomething
 		}
 	}
-	
-	if (my_tank.collide(worldWallGroup)) {
+	for (var e = 0; e < enemyGroup.length; e++) {
+		if (isOutOfRange(enemyGroup[e])) {
+			enemyDie(enemyGroup[e])
+		}
+	}
+	if (my_tank.collide(worldWallGroup) || my_tank.collide(steelWallGroup) || my_tank.collide(redWallGroup) || my_tank.collide(lakeGroup)) {
 		return
 	}
-	if (my_tank.collide(redWallGroup) === true) {
-		return
-	}
+}
+
+function enemyDie(enemy) {
+		enemy.remove()
+		clearInterval(enemy.enemyMoverIntervalID)
+		clearInterval(enemy.moveEnemyIntervalID)
+		clearInterval(enemy.shotID)	
 }
 
 function scoreUp() {
@@ -311,7 +392,20 @@ function scoreUp() {
 		isGameOver = true
 		clearInterval(enemyGeneratorIntervalID)
 		park(my_tank)
+		success()
 	}
+}
+
+
+function bomb(bullet) {
+		var bomb = createSprite(bullet.position.x, bullet.position.y, 10, 10)
+		bomb.addImage(loadImage(imageNames.bullet_bomb))
+		setTimeout(dismiss, 60, bomb)		
+}
+
+
+function dismiss(sprite) {
+	sprite.remove()
 }
 
 
@@ -442,33 +536,30 @@ function enemyGenerator() {
 		for (var i = 0; i < enemyGroup.length; ++i) {
 			posBook[enemyGroup[i].posMark] = 1
 		}
-		for (var j = 0; j < posBook.length; ++j) {
-			if (posBook[j] === 0) {
-				switch (j) {
-					case 0:
-					posX = 2
-					posY = 2
-					break
-					case 1:
-					posX = 24
-					posY = 2
-					break
-					case 2:
-					posX = 2
-					posY = 13
-					break
-					case 3:
-					posX = 24
-					posY = 13
-				}
-				posMark = j
-				console.log("posMark " + posMark)
-				break
-			} else if (posBook[j] === 1) {
-				console.log("1")
-			} 
-		}
+		posMark = randPos(posBook, 0)
+		console.log("posMark " + posMark)
+	} else {
+		posMark = Math.floor(Math.random() * 10) % 4
 	}
+
+
+	switch (posMark) {
+		case 0:
+		posX = 2
+		posY = 2
+		break
+		case 1:
+		posX = 24
+		posY = 2
+		break
+		case 2:
+		posX = 2
+		posY = 13
+		break
+		case 3:
+		posX = 24
+		posY = 13
+	}	
 	
 	var enemy = createSprite(UNIT_WIDTH * posX, UNIT_WIDTH * posY, UNIT_WIDTH * 2, UNIT_WIDTH * 2)
 	enemy.posMark = posMark
@@ -483,8 +574,20 @@ function enemyGenerator() {
 	timeIntervalIDs.push(enemy.enemyMoverIntervalID)
 }
 
+
+function randPos(posBook, withMark) {
+	var mark = withMark
+	var tmpArr = []
+	//posBook is like [1, 0, 0, 1, 0]
+	for (var i = 0; i < posBook.length; ++i) {
+		if (posBook[i] === mark) {
+			tmpArr.push(i)
+		}
+	}
+	return tmpArr[Math.floor(Math.random() * 10) % (tmpArr.length)]
+}
+
 function enemyShot(enemy) {
-	shot(enemy)
 	enemy.shotID = setInterval(shot, 2000, enemy)
 	timeIntervalIDs.push(enemy.shotID)
 }
@@ -555,8 +658,8 @@ function startMoving(enemy) {
 
 function moveEnemy(enemy, time) {
 
-	if (enemy.collide(worldWallGroup) || enemy.collide(redWallGroup) || enemy.moveCount >= time) {
-		clearInterval(enemy.moveEnemyIntervalID)		
+	if (enemy.collide(worldWallGroup) || enemy.collide(redWallGroup) || enemy.collide(steelWallGroup) || enemy.collide(enemyGroup) || enemy.moveCount >= time) {
+		clearInterval(enemy.moveEnemyIntervalID)
 		enemy.isMoving = false
 		park(enemy)
 		randomDirection(enemy)
