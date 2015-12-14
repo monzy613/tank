@@ -14,7 +14,8 @@ var imageNames = {
     red_wall: "Assets/image/redWall.png",
 	eagle: "Assets/image/eagle.png",
 	white_flag: "Assets/image/white_flag.png",
-	light_enemy: "Assets/image/light_tank.png"
+	light_enemy: "Assets/image/light_tank.png",
+	gameOver: "Assets/image/gameover.png"
 }
 
 
@@ -33,15 +34,17 @@ var moveSpeed = 1.5
 
 var my_tank
 var eagle
+var gameOverLabel = undefined
 
 var score = 0
 //if score === 20 success
-
+var isShotting = false
 
 //map 
 //0: empty
 //1: redWall
 //2: whiteWall
+var timeIntervalIDs = []
 
 
 var redWallGroup
@@ -50,7 +53,6 @@ var enemyGroup
 var enemyBulletGroup
 var bulletGroup
 
-var isSpacePressed = false
 var isGameOver = false
 
 var enemyGeneratorIntervalID
@@ -88,6 +90,19 @@ function initGame() {
 	score = 0
 }
 
+function clearAllIntervals() {
+	while(timeIntervalIDs.length !== 0) {
+		clearInterval(timeIntervalIDs.pop())
+	}
+}
+
+function restart() {
+	allSprites.removeSprites()
+	isGameOver = false
+	clearAllIntervals()
+	preload()
+}
+
 function preload() {
 	my_tank = createSprite(UNIT_WIDTH * 9, UNIT_WIDTH * 25, UNIT_WIDTH * 2, UNIT_WIDTH * 2)
 	my_tank.addImage("direction", loadImage(imageNames. my_tank_up))
@@ -104,16 +119,26 @@ function preload() {
 	enemyBulletGroup = new Group()
 	bulletGroup = new Group()
 	drawMap()
+  	enemyGeneratorIntervalID = setInterval(enemyGenerator, 2000)
+	timeIntervalIDs.push(enemyGeneratorIntervalID)
+  	enemyGenerator()	
 }
 
 function setup() {
   createCanvas(SCREEN_WIDTH * 1.5, SCREEN_WIDTH)
-  enemyGeneratorIntervalID = setInterval(enemyGenerator, 2000)
-  enemyGenerator()
 }
 
 function draw() {
 	background(0, 0, 0)
+	if (isGameOver === true && gameOverLabel !== undefined) {
+		if (gameOverLabel.mouseIsPressed) {
+			gameOverLabel.remove()
+			restart()
+		}
+	}
+	if (keyIsPressed === true && isShotting === true) {
+		shot(my_tank)
+	}
 	showScore()
 	detectCollide()
 	drawSprites()
@@ -125,7 +150,6 @@ function showScore() {
 }
 
 function drawMap() {
-	console.log("drawMap " + my_map.length)
 	for (var i = 0; i < my_map.length; ++i) {
 		for (var j = 0; j < my_map[i].length; ++j) {
 			if (my_map[j][i] === 1) {
@@ -154,7 +178,7 @@ function initWorldWalls() {
 
 function shot(sprite) {
 	if (sprite.name === "my_tank") {
-		if (isSpacePressed === true || bulletGroup.length >= 1) {
+		if (bulletGroup.length >= 1) {
 			return
 		}
 	}
@@ -194,12 +218,16 @@ function shot(sprite) {
 
 function gameOver() {
 	isGameOver = true
-	eagle.addImage(loadImage(imageNames.white_flag))
-	clearInterval(enemyGeneratorIntervalID)	
+	clearInterval(enemyGeneratorIntervalID)
+	gameOverLabel = createSprite(13 * UNIT_WIDTH, 13 * UNIT_WIDTH, UNIT_WIDTH * 2 / 3, UNIT_WIDTH * 2 / 3)
+	gameOverLabel.addImage(loadImage(imageNames.gameOver))
+	gameOverLabel.mouseActive = true
 }
 
 function detectCollide() {
-	
+	if (isGameOver === true) {
+		return
+	}
 	//detect my_tank shot
 	for (var j = 0; j < bulletGroup.length; ++j) {
 		if (
@@ -214,6 +242,7 @@ function detectCollide() {
 		||
 		bulletGroup[j].collide(eagle, function(bullet, flag) {
 			//gameOver
+			eagle.addImage(loadImage(imageNames.white_flag))
 			gameOver()
 			bullet.remove()
 		})
@@ -256,6 +285,7 @@ function detectCollide() {
 			})
 			||
 			enemyBulletGroup[k].collide(eagle, function(sp1, sp2) {
+				eagle.addImage(loadImage(imageNames.white_flag))
 				sp1.remove()
 				gameOver()
 			})
@@ -324,8 +354,7 @@ function keyPressed() {
 		park(my_tank)
 		move(my_tank, RIGHT)		
 	} else if (keyCode === 32) {
-		shot(my_tank)
-		isSpacePressed = true
+		isShotting = true
 	}
 }
 
@@ -335,7 +364,7 @@ function keyReleased() {
 	} else if (keyCode === 37 || keyCode === 39) {
 		parkDirection(my_tank, LEFT)
 	} else if (keyCode === 32) {
-		isSpacePressed = false
+		isShotting = false
 	}
 }
 
@@ -403,8 +432,46 @@ function enemyGenerator() {
 	if (enemyGroup.length >= 4) {
 		return
 	}
+	//position (1, 1), (25, 1), (1, 13), (25, 13)
+	//          0       1      2        3
+	var posX = 1
+	var posY = 1
+	var posBook = [0, 0, 0, 0]
+	var posMark = 0
+	if (enemyGroup.length !== 0) {
+		for (var i = 0; i < enemyGroup.length; ++i) {
+			posBook[enemyGroup[i].posMark] = 1
+		}
+		for (var j = 0; j < posBook.length; ++j) {
+			if (posBook[j] === 0) {
+				switch (j) {
+					case 0:
+					posX = 2
+					posY = 2
+					break
+					case 1:
+					posX = 24
+					posY = 2
+					break
+					case 2:
+					posX = 2
+					posY = 13
+					break
+					case 3:
+					posX = 24
+					posY = 13
+				}
+				posMark = j
+				console.log("posMark " + posMark)
+				break
+			} else if (posBook[j] === 1) {
+				console.log("1")
+			} 
+		}
+	}
 	
-	var enemy = createSprite(UNIT_WIDTH, Math.floor(Math.random() * 10) * UNIT_WIDTH, UNIT_WIDTH * 2, UNIT_WIDTH * 2)
+	var enemy = createSprite(UNIT_WIDTH * posX, UNIT_WIDTH * posY, UNIT_WIDTH * 2, UNIT_WIDTH * 2)
+	enemy.posMark = posMark
 	enemy.addImage(loadImage(imageNames.light_enemy))
 	enemyGroup.add(enemy)
 	enemy.isMoving = false
@@ -413,11 +480,13 @@ function enemyGenerator() {
 	enemyMover(enemy)
 	enemyShot(enemy)
 	enemy.enemyMoverIntervalID = setInterval(enemyMover, 2000, enemy)
+	timeIntervalIDs.push(enemy.enemyMoverIntervalID)
 }
 
 function enemyShot(enemy) {
 	shot(enemy)
-	enemy.shotID = setInterval(shot, 1000, enemy)
+	enemy.shotID = setInterval(shot, 2000, enemy)
+	timeIntervalIDs.push(enemy.shotID)
 }
 
 function enemyMover(enemy) {
@@ -481,16 +550,16 @@ function startMoving(enemy) {
 	enemy.moveCount = 0
 	moveEnemy(enemy, time)
 	enemy.moveEnemyIntervalID = setInterval(moveEnemy, 1, enemy, time)
+	timeIntervalIDs.push(enemy.moveEnemyIntervalID)
 }
 
 function moveEnemy(enemy, time) {
 
 	if (enemy.collide(worldWallGroup) || enemy.collide(redWallGroup) || enemy.moveCount >= time) {
-		clearInterval(enemy.moveEnemyIntervalID)
+		clearInterval(enemy.moveEnemyIntervalID)		
 		enemy.isMoving = false
 		park(enemy)
 		randomDirection(enemy)
-		startMoving(enemy)
 		return
 	} else {
 		move(enemy, enemy.direction)
