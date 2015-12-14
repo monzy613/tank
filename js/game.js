@@ -1,28 +1,5 @@
 //game.js
 // the logic of tank game
-
-
-var imageNames = {
-	my_tank_up: "Assets/image/myTank.png",
-	my_tank_down: "Assets/image/myTank_down.png",
-	my_tank_left: "Assets/image/myTank_l.png",
-	my_tank_right: "Assets/image/myTank_r.png",
-	bullet_bomb: "Assets/image/bullet_bomb.png",
-	bullet_up: "Assets/image/bullet.png",
-	bullet_down: "Assets/image/bullet_d.png",
-	bullet_left: "Assets/image/bullet_l.png",
-	bullet_right: "Assets/image/bullet_r.png",
-	red_wall: "Assets/image/redWall.png",
-	steelWall: "Assets/image/steelWall.png",
-	lake: "Assets/image/lake.png",
-	eagle: "Assets/image/eagle.png",
-	white_flag: "Assets/image/white_flag.png",
-	light_enemy: "Assets/image/light_tank.png",
-	gameOver: "Assets/image/gameover.png",
-	success: "Assets/image/success.png",
-}
-
-
 var UP = "up"
 var DOWN = "down"
 var LEFT = "left"
@@ -61,37 +38,10 @@ var bulletGroup
 var lakeGroup
 
 var isGameOver = false
+var currentLevel = 1
 
 var enemyGeneratorIntervalID
 
-var my_map = [
-	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-	[0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0],
-	[0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0],
-	[0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0],
-	[0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0],
-	[0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0],
-	[0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0],
-	[0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0],
-	[0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0],
-	[0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0],
-	[0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0],
-	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],	
-	[2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2],
-	[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-	[0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0],
-	[0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0],
-	[0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0],
-	[0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 3, 3, 3, 3, 3, 3, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0],
-	[0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 3, 3, 3, 3, 3, 3, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0],
-	[0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0],
-	[0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0],
-	[0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0],
-	[0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0],
-	[0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0]	
-]
 
 function initGame() {
 	score = 0
@@ -142,14 +92,14 @@ function setup() {
 function draw() {
 	background(0, 0, 0)
 	if (isGameOver === true && gameOverLabel !== undefined) {
-		if (gameOverLabel.mouseIsPressed) {
+		if (gameOverLabel.mouseIsPressed || keyCode === 13) {
 			gameOverLabel.remove()
 			gameOverLabel = undefined
 			restart()
 		}
 	}
 	if (isGameOver === true && successLabel !== undefined) {
-		if (successLabel.mouseIsPressed) {
+		if (successLabel.mouseIsPressed || keyCode === 13) {
 			successLabel.remove()
 			successLabel = undefined
 			restart()
@@ -169,13 +119,13 @@ function showScore() {
 }
 
 function drawMap() {
-	for (var i = 0; i < my_map.length; ++i) {
-		for (var j = 0; j < my_map[i].length; ++j) {
-			if (my_map[j][i] === 0) {
+	for (var i = 0; i < level[currentLevel].length; ++i) {
+		for (var j = 0; j < level[currentLevel][i].length; ++j) {
+			if (level[currentLevel][j][i] === 0) {
 				continue
 			}
 			var tmp = createSprite((i + 0.5) * UNIT_WIDTH, (j + 0.5) * UNIT_WIDTH, UNIT_WIDTH, UNIT_WIDTH)
-			switch(my_map[j][i]) {
+			switch(level[currentLevel][j][i]) {
 				case 1://redwall
 				tmp.addImage(loadImage(imageNames.red_wall))
 				redWallGroup.add(tmp)				
@@ -214,6 +164,11 @@ function shot(sprite) {
 		if (bulletGroup.length >= 1) {
 			return
 		}
+	} else {
+		var doShot = Math.floor(Math.random() * 10) % 2
+		if (doShot === 0) {
+			return
+		}		
 	}
 	
 	var blt = createSprite(sprite.position.x, sprite.position.y, BULLET_WIDTH, BULLET_WIDTH)
@@ -400,7 +355,7 @@ function scoreUp() {
 function bomb(bullet) {
 		var bomb = createSprite(bullet.position.x, bullet.position.y, 10, 10)
 		bomb.addImage(loadImage(imageNames.bullet_bomb))
-		setTimeout(dismiss, 60, bomb)		
+		setTimeout(dismiss, 40, bomb)		
 }
 
 
@@ -562,6 +517,7 @@ function enemyGenerator() {
 	}	
 	
 	var enemy = createSprite(UNIT_WIDTH * posX, UNIT_WIDTH * posY, UNIT_WIDTH * 2, UNIT_WIDTH * 2)
+	enemy.depth = my_tank.depth
 	enemy.posMark = posMark
 	enemy.addImage(loadImage(imageNames.light_enemy))
 	enemyGroup.add(enemy)
@@ -588,7 +544,7 @@ function randPos(posBook, withMark) {
 }
 
 function enemyShot(enemy) {
-	enemy.shotID = setInterval(shot, 2000, enemy)
+	enemy.shotID = setInterval(shot, 1000, enemy)
 	timeIntervalIDs.push(enemy.shotID)
 }
 
@@ -658,7 +614,7 @@ function startMoving(enemy) {
 
 function moveEnemy(enemy, time) {
 
-	if (enemy.collide(worldWallGroup) || enemy.collide(redWallGroup) || enemy.collide(steelWallGroup) || enemy.collide(enemyGroup) || enemy.moveCount >= time) {
+	if (enemy.collide(worldWallGroup) || enemy.collide(redWallGroup) || enemy.collide(steelWallGroup) || enemy.collide(enemyGroup) || enemy.collide(lakeGroup) || enemy.moveCount >= time) {
 		clearInterval(enemy.moveEnemyIntervalID)
 		enemy.isMoving = false
 		park(enemy)
