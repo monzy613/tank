@@ -8,8 +8,8 @@ var RIGHT = "right"
 var UNIT_WIDTH = 16
 var COLLIDE_WIDTH = 24
 var SCREEN_WIDTH = UNIT_WIDTH * 26
-var BULLET_WIDTH = 16
-var WIN_SCORE = 20
+var BULLET_WIDTH = 8
+var WIN_SCORE = 4
 var BULLET_SPEED = 3
 var moveSpeed = 1.5 
 
@@ -26,7 +26,9 @@ var isShotting = false
 //0: empty
 //1: redWall
 //2: whiteWall
-var timeIntervalIDs = []
+
+var highestTimeIntervalID = -1
+var highestTimeoutID = -1
 
 
 var redWallGroup
@@ -38,7 +40,7 @@ var bulletGroup
 var lakeGroup
 
 var isGameOver = false
-var currentLevel = 1
+var currentLevel = 0
 
 var enemyGeneratorIntervalID
 
@@ -48,22 +50,55 @@ function initGame() {
 }
 
 function clearAllIntervals() {
-	while(timeIntervalIDs.length !== 0) {
-		clearInterval(timeIntervalIDs.pop())
-	}
+    for (var i = 0; i < highestTimeIntervalID; ++i) {
+        clearInterval(i)
+    }
+    
+    for (var j = 0; j < highestTimeoutID; ++j) {
+        clearTimeout(j)
+    }
+    highestTimeIntervalID = 0
+    highestTimeoutID = 0
 }
 
 function restart() {
-	allSprites.removeSprites()
+    clearAllIntervals()
+    allSprites.removeSprites()
+    
+	redWallGroup.splice(0, redWallGroup.length)
+	steelWallGroup.splice(0, steelWallGroup.length)
+	worldWallGroup.splice(0, worldWallGroup.length)
+	enemyGroup.splice(0, enemyGroup.length)
+	lakeGroup.splice(0, lakeGroup.length)
+	bulletGroup.splice(0, bulletGroup.length)
+	enemyBulletGroup.splice(0, enemyBulletGroup.length)
+    
 	isGameOver = false
-	clearAllIntervals()
 	score = 0
-	preload()
+	loadScene()
 }
 
+
 function preload() {
+	bulletImg = loadImage(imageNames.bullet_up)
+	redwallImg = loadImage(imageNames.red_wall)
+    tankImg = loadImage(imageNames.my_tank_up)
+    enemyImg = loadImage(imageNames.light_enemy) 
+    
+	redWallGroup = new Group()
+	worldWallGroup = new Group()
+	enemyGroup = new Group()
+	enemyBulletGroup = new Group()
+	bulletGroup = new Group()
+	steelWallGroup = new Group()
+	lakeGroup = new Group()        
+    loadScene()
+}
+
+function loadScene() {	
+	
 	my_tank = createSprite(UNIT_WIDTH * 9, UNIT_WIDTH * 25, UNIT_WIDTH * 2, UNIT_WIDTH * 2)
-	my_tank.addImage("direction", loadImage(imageNames. my_tank_up))
+	my_tank.addImage(tankImg)
 	my_tank.name = "my_tank"
 	my_tank.setCollider("rectangle", 0, 0, COLLIDE_WIDTH, COLLIDE_WIDTH)
 	my_tank.direction = UP
@@ -71,22 +106,15 @@ function preload() {
 	eagle = createSprite(SCREEN_WIDTH / 2, SCREEN_WIDTH - UNIT_WIDTH, UNIT_WIDTH * 2, UNIT_WIDTH * 2)
 	eagle.addImage(loadImage(imageNames.eagle))
 	
-	redWallGroup = new Group()
-	worldWallGroup = new Group()
-	enemyGroup = new Group()
-	enemyBulletGroup = new Group()
-	bulletGroup = new Group()
-	steelWallGroup = new Group()
-	lakeGroup = new Group()
-	
 	drawMap()
-  	enemyGeneratorIntervalID = setInterval(enemyGenerator, 2000)
-	timeIntervalIDs.push(enemyGeneratorIntervalID)
-  	enemyGenerator()	
+    highestTimeIntervalID = setInterval(enemyGenerator, 2000)
+    enemyGeneratorIntervalID = highestTimeIntervalID
+	enemyGenerator()    
 }
 
 function setup() {
   createCanvas(SCREEN_WIDTH * 1.5, SCREEN_WIDTH)
+	console.log("setup")
 }
 
 function draw() {
@@ -108,9 +136,14 @@ function draw() {
 	if (keyIsPressed === true && isShotting === true) {
 		shot(my_tank)
 	}
-	showScore()
+	showGameInfo()
 	detectCollide()
 	drawSprites()
+}
+
+function showGameInfo() {
+	showLevel()
+	showScore()
 }
 
 function showScore() {
@@ -118,16 +151,26 @@ function showScore() {
 	text(score, SCREEN_WIDTH, SCREEN_WIDTH / 2, SCREEN_WIDTH * 1.5, SCREEN_WIDTH / 2 + 100)
 }
 
+function showLevel() {
+	textSize(32)
+	var levelText = "Level " + (currentLevel + 1)
+	text(levelText, SCREEN_WIDTH, SCREEN_WIDTH / 4, SCREEN_WIDTH * 1.5, SCREEN_WIDTH / 2 + 100)
+}
+
 function drawMap() {
+	if (level[currentLevel] === undefined) {
+		currentLevel -= 1
+	}
 	for (var i = 0; i < level[currentLevel].length; ++i) {
 		for (var j = 0; j < level[currentLevel][i].length; ++j) {
 			if (level[currentLevel][j][i] === 0) {
 				continue
 			}
 			var tmp = createSprite((i + 0.5) * UNIT_WIDTH, (j + 0.5) * UNIT_WIDTH, UNIT_WIDTH, UNIT_WIDTH)
+			tmp.setCollider("rectangle", 0, 0, UNIT_WIDTH, UNIT_WIDTH)
 			switch(level[currentLevel][j][i]) {
 				case 1://redwall
-				tmp.addImage(loadImage(imageNames.red_wall))
+				tmp.addImage(redwallImg)
 				redWallGroup.add(tmp)				
 				break
 				case 2://steelwall
@@ -179,26 +222,27 @@ function shot(sprite) {
 	} else {
 		enemyBulletGroup.add(blt)
 	}
-	
+	blt.direction = sprite.direction
+	my_rotate(blt)
 	switch (sprite.direction) {
 		case UP:
 		blt.position.y -= sprite.height / 2
-		blt.addImage(loadImage(imageNames.bullet_up))
+		blt.addImage(bulletImg)
 		blt.setVelocity(0, -BULLET_SPEED)
 		break
 		case DOWN:
 		blt.position.y += sprite.height / 2
-		blt.addImage(loadImage(imageNames.bullet_down))
+		blt.addImage(bulletImg)
 		blt.setVelocity(0, BULLET_SPEED)
 		break
 		case LEFT:
 		blt.position.x -= sprite.width / 2
-		blt.addImage(loadImage(imageNames.bullet_left))
+		blt.addImage(bulletImg)
 		blt.setVelocity(-BULLET_SPEED, 0)
 		break
 		case RIGHT:
 		blt.position.x += sprite.width / 2
-		blt.addImage(loadImage(imageNames.bullet_right))
+		blt.addImage(bulletImg)
 		blt.setVelocity(BULLET_SPEED, 0)
 		break
 	} 
@@ -214,6 +258,7 @@ function gameOver() {
 
 function success() {
 	clearSprites()
+	currentLevel++
 	successLabel = createSprite(13 * UNIT_WIDTH, 13 * UNIT_WIDTH, UNIT_WIDTH * 2 / 3, UNIT_WIDTH * 2 / 3)
 	successLabel.addImage(loadImage(imageNames.success))
 	successLabel.mouseActive = true	
@@ -353,13 +398,14 @@ function scoreUp() {
 
 
 function bomb(bullet) {
-		var bomb = createSprite(bullet.position.x, bullet.position.y, 10, 10)
-		bomb.addImage(loadImage(imageNames.bullet_bomb))
-		setTimeout(dismiss, 40, bomb)		
+	var bomb = createSprite(bullet.position.x, bullet.position.y, 10, 10)
+	bomb.addImage(loadImage(imageNames.bullet_bomb))
+	bomb.depth = bullet.depth
+	highestTimeoutID = setTimeout(dismiss, 40, bomb)
 }
 
 
-function dismiss(sprite) {
+function dismiss(sprite, timeout) {
 	sprite.remove()
 }
 
@@ -514,20 +560,29 @@ function enemyGenerator() {
 		case 3:
 		posX = 24
 		posY = 13
-	}	
+	}
 	
+	var blink = createSprite(UNIT_WIDTH * posX, UNIT_WIDTH * posY, UNIT_WIDTH * 2, UNIT_WIDTH * 2)
+	blink.addAnimation("blink", imageNames.init1, imageNames.init2)
+	blink.changeAnimation("blink")
+	highestTimeoutID = setTimeout(generate, 1000, posX, posY, posMark, blink)
+}
+
+
+function generate(posX, posY, posMark, blink) {
+	blink.remove()
 	var enemy = createSprite(UNIT_WIDTH * posX, UNIT_WIDTH * posY, UNIT_WIDTH * 2, UNIT_WIDTH * 2)
 	enemy.depth = my_tank.depth
 	enemy.posMark = posMark
-	enemy.addImage(loadImage(imageNames.light_enemy))
+	enemy.addImage(enemyImg)
 	enemyGroup.add(enemy)
 	enemy.isMoving = false
 	enemy.setCollider("rectangle", 0, 0, COLLIDE_WIDTH, COLLIDE_WIDTH)
 	randomDirection(enemy)
 	enemyMover(enemy)
 	enemyShot(enemy)
-	enemy.enemyMoverIntervalID = setInterval(enemyMover, 2000, enemy)
-	timeIntervalIDs.push(enemy.enemyMoverIntervalID)
+	highestTimeIntervalID = setInterval(enemyMover, 2000, enemy)
+    highestTimeIntervalID = enemy.enemyMoverIntervalID	
 }
 
 
@@ -544,8 +599,8 @@ function randPos(posBook, withMark) {
 }
 
 function enemyShot(enemy) {
-	enemy.shotID = setInterval(shot, 1000, enemy)
-	timeIntervalIDs.push(enemy.shotID)
+    highestTimeIntervalID = setInterval(shot, 1000, enemy)
+    enemy.shotID = highestTimeIntervalID
 }
 
 function enemyMover(enemy) {
@@ -608,8 +663,8 @@ function startMoving(enemy) {
 	var time = Math.floor(Math.random() * 1000) % 100 + 200
 	enemy.moveCount = 0
 	moveEnemy(enemy, time)
-	enemy.moveEnemyIntervalID = setInterval(moveEnemy, 1, enemy, time)
-	timeIntervalIDs.push(enemy.moveEnemyIntervalID)
+	highestTimeIntervalID = setInterval(moveEnemy, 1, enemy, time)
+    enemy.moveEnemyIntervalID = highestTimeIntervalID
 }
 
 function moveEnemy(enemy, time) {

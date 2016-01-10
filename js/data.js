@@ -16,7 +16,14 @@ var imageNames = {
 	light_enemy: "Assets/image/light_tank.png",
 	gameOver: "Assets/image/gameover.png",
 	success: "Assets/image/success.png",
+	init1: "Assets/image/init1.png",
+	init2: "Assets/image/init2.png",
 }
+
+var bulletImg
+var redwallImg
+var tankImg
+var enemyImg
 
 var level = [
 	[
